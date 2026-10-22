@@ -1,0 +1,3 @@
+Shippori Mincho B1 (c) The Shippori Mincho Project Authors; Zen Kaku Gothic New (c) Yoshimichi Ohira.
+Licensed under the SIL Open Font License 1.1 — https://openfontlicense.org
+Arquivos reduzidos (subset) para os caracteres usados no site.
