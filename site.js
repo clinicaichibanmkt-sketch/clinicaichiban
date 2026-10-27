@@ -34,10 +34,16 @@
     document.addEventListener("keydown", function (e) { if (e.key === "Escape" && !mobileNav.hidden) close(); });
   }
 
-  // WhatsApp links carry the page they came from, so the clinic knows which page brought the contact
+  // WhatsApp links carry the page they came from and a message that matches the button's intent
+  var WA_TEXT = {
+    duvida: function (p) { return "Olá! Vim pelo site e gostaria de esclarecer uma dúvida sobre " + p + "."; },
+    agendar: function (p) { return "Olá! Vim pelo site (página: " + p + ") e gostaria de solicitar um agendamento."; },
+    falar: function (p) { return "Olá! Vim pelo site (página: " + p + ") e gostaria de falar com a recepção."; }
+  };
   document.querySelectorAll("[data-wa]").forEach(function (a) {
     var page = a.getAttribute("data-wa") || document.title;
-    a.href = waLink("Olá! Vim pelo site (página: " + page + ") e gostaria de agendar uma avaliação.");
+    var make = WA_TEXT[a.getAttribute("data-wa-intent")] || WA_TEXT.falar;
+    a.href = waLink(make(page));
     a.target = "_blank"; a.rel = "noopener";
   });
 
@@ -58,10 +64,10 @@
       e.preventDefault();
       var nome = form.querySelector("#f-nome").value.trim();
       var tel = form.querySelector("#f-telefone").value.trim();
-      if (!nome || !tel) {
+      if (!nome) {
         err.hidden = false;
-        err.textContent = "Preencha seu nome e telefone para enviarmos o pedido.";
-        (nome ? form.querySelector("#f-telefone") : form.querySelector("#f-nome")).focus();
+        err.textContent = "Preencha seu nome para enviarmos a solicitação.";
+        form.querySelector("#f-nome").focus();
         return;
       }
       err.hidden = true;
@@ -69,16 +75,18 @@
       var primeira = form.querySelector("input[name=primeira]:checked");
       var msg = form.querySelector("#f-mensagem").value.trim();
       var lines = [
-        "Olá! Quero agendar uma avaliação na Clínica Ichiban.",
+        "Olá! Gostaria de solicitar um agendamento na Clínica Ichiban.",
         "",
-        "Nome: " + nome,
-        "Telefone: " + tel,
+        "Nome: " + nome
+      ];
+      if (tel) lines.push("Outro telefone: " + tel);
+      lines = lines.concat([
         "Interesse: " + (sel ? sel.value : "Avaliação"),
         "Melhor período: " + (periodos.length ? periodos.join(", ") : "Qualquer horário"),
         "Primeira consulta: " + (primeira ? primeira.value : "Não informado")
-      ];
+      ]);
       if (msg) lines.push("Mensagem: " + msg);
-      lines.push("", "(Pré-agendamento pelo site" + (origem ? ", página: " + origem : "") + ")");
+      lines.push("", "(Solicitação enviada pelo site" + (origem ? ", página: " + origem : "") + ")");
       var url = waLink(lines.join("\n"));
       if (window.dataLayer) window.dataLayer.push({ event: "pre_agendamento", tratamento: sel ? sel.value : "", origem: origem });
       var w = window.open(url, "_blank", "noopener");
@@ -100,15 +108,25 @@
   try { consent = localStorage.getItem(CONSENT_KEY); } catch (e) {}
   if (consent === "sim") loadGTM();
   var banner = document.getElementById("cookie");
-  if (banner && !consent) {
-    banner.hidden = false;
+  if (banner) {
+    if (!consent) banner.hidden = false;
     banner.querySelector("[data-accept]").addEventListener("click", function () {
       try { localStorage.setItem(CONSENT_KEY, "sim"); } catch (e) {}
-      banner.hidden = true; loadGTM();
+      consent = "sim"; banner.hidden = true; loadGTM();
     });
     banner.querySelector("[data-decline]").addEventListener("click", function () {
       try { localStorage.setItem(CONSENT_KEY, "nao"); } catch (e) {}
       banner.hidden = true;
+      // analytics already running on this page: reload so it stops
+      if (window.__gtmLoaded) location.reload();
+      consent = "nao";
+    });
+    // footer link reopens the choice at any time
+    document.querySelectorAll("[data-cookie-prefs]").forEach(function (b) {
+      b.addEventListener("click", function () {
+        banner.hidden = false;
+        var f = banner.querySelector("[data-accept]"); if (f) f.focus();
+      });
     });
   }
 
@@ -137,6 +155,15 @@
     el.classList.remove("reveal", "in");
     el.style.removeProperty("--d");
   }
+
+  // keyboard focus or printing never meets hidden content
+  document.addEventListener("focusin", function (ev) {
+    var el = ev.target.closest && ev.target.closest(".reveal");
+    if (el) { io.unobserve(el); done(el); }
+  });
+  window.addEventListener("beforeprint", function () {
+    Array.prototype.forEach.call(document.querySelectorAll(".reveal"), function (el) { io.unobserve(el); done(el); });
+  });
 
   var io = new IntersectionObserver(function (entries) {
     entries.forEach(function (en) {

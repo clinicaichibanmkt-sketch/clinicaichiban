@@ -579,3 +579,23 @@ fieldset.field { border: 0; padding: 0; margin: 0; }
   .wa-float::after { content: ""; position: absolute; inset: 0; border-radius: inherit; box-shadow: 0 0 0 0 rgba(60, 207, 106, .45); animation: ichi-pulse 2.8s ease-out 2.2s 3; pointer-events: none; }
 }
 @keyframes ichi-pulse { 0% { box-shadow: 0 0 0 0 rgba(60, 207, 106, .45); } 100% { box-shadow: 0 0 0 16px rgba(60, 207, 106, 0); } }
+
+/* ---------------- review v3: byline, cookie preferences link, article chips */
+.byline { margin-top: 14px; font-size: .86rem; line-height: 1.5; color: var(--muted); }
+.linklike { appearance: none; background: none; border: 0; padding: 0; font: inherit; color: var(--on-night-2); cursor: pointer; text-align: left; }
+.linklike:hover, .linklike:focus-visible { color: var(--on-night); text-decoration: underline; }
+.chip-art { border-style: dashed; color: var(--muted); }
+.chip-art:hover { color: var(--red); }
+
+/* ---------------- team of 8: rows stay balanced, a short last row is centered */
+.team-strip { display: flex; flex-wrap: wrap; gap: 14px; }
+.team-strip a { flex: 0 0 calc((100% - (var(--n, 6) - 1) * 14px) / var(--n, 6)); }
+@media (max-width: 860px) {
+  .team-strip { justify-content: center; }
+  .team-strip a { flex-basis: calc((100% - 28px) / 3); }
+}
+.team-grid { display: flex; flex-wrap: wrap; justify-content: center; gap: 48px 32px; }
+.team-grid .member { flex: 0 0 calc((100% - 96px) / 4); }
+@media (max-width: 1100px) { .team-grid .member { flex-basis: calc((100% - 64px) / 3); } }
+@media (max-width: 960px) { .team-grid .member { flex-basis: calc((100% - 32px) / 2); } }
+@media (max-width: 560px) { .team-grid .member { flex-basis: 100%; } }
